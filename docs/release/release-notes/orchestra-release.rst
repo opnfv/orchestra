@@ -21,7 +21,7 @@ Version history
 |            |          |                    |                        |
 +------------+----------+--------------------+------------------------+
 | 2017-08-25 | 1.0.0    | Giuseppe Carella   | Functest for           |
-|            |          | (Fraunhofer FOKUS) | Colorado.1.0 release   |
+|            |          | (Fraunhofer FOKUS) | Euphrates.1.0 release   |
 +------------+----------+--------------------+------------------------+
 
 OPNFV Orchestra Euphrates Release
