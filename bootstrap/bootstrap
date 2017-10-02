@@ -1,0 +1,273 @@
+#!/bin/sh
+#
+# This script allows you to install openbaton. To execute it:
+#
+# sh <(curl -s http://get.openbaton.org/bootstrap) [help | clean | enable-persistence] | [[release | develop] [--openbaton-bootstrap-version=X.Y.Z (with X.Y.Z >= 3.2.0)] [--config-file=<absolute path to configuration file>]]
+
+
+
+##########################
+#### General Settings ####
+##########################
+
+set -u
+#set -x # only for DEBUG
+
+# Make available the functions defined in /lib/lsb/init-functions
+. /lib/lsb/init-functions
+
+
+##########################
+#### Global Variables ####
+##########################
+
+OPENBATON_BOOTSTRAP_VERSION_DEFAULT=""
+openbaton_bootstrap_version=${openbaton_bootstrap_version:-$OPENBATON_BOOTSTRAP_VERSION_DEFAULT}
+
+OPENBATON_BOOTSTRAP_ENV_FILE="/tmp/bootstrap_env"
+
+OPENBATON_BOOTSTRAP_FUNCTIONS_BASE_URL=http://get.openbaton.org/bootstraps/orchestra/euphrates/
+
+USER="$(id -un 2>/dev/null || true)"
+
+OS_ARCHITECTURE=$(uname -m)
+OS_TYPE=$(uname -a | awk -F' ' '{ print $1 }')
+
+case "${OS_TYPE}" in
+    'Linux')
+        OS_DISTRIBUTION_ID=$( lsb_release -a 2>/dev/null | grep "Distributor ID" | sed "s/[ \t]*//g" | awk -F':' '{ print $2 }')
+        OS_DISTRIBUTION_RELEASE=$( lsb_release -a 2>/dev/null | grep "Release" | sed "s/[ \t]*//g" | awk -F':' '{ print $2 }' )
+        OS_DISTRIBUTION_CODENAME=$( lsb_release -a 2>/dev/null | grep "Codename" | sed "s/[ \t]*//g" | awk -F':' '{ print $2 }' )
+        ;;
+    'Darwin')
+        OS_DISTRIBUTION_ID=$( sw_vers -productName )
+        OS_DISTRIBUTION_RELEASE=$( sw_vers -productVersion )
+        ;;
+    *)
+        OS_DISTRIBUTION_ID=undefined
+        OS_DISTRIBUTION_RELEASE=undefined
+        ;;
+esac
+
+if [ ${OS_DISTRIBUTION_RELEASE} != 'undefined' ]; then
+    OS_DISTRIBUTION_RELEASE_MAJOR=$( echo ${OS_DISTRIBUTION_RELEASE} | awk -F'.' '{ print $1 }' )
+else
+    OS_DISTRIBUTION_RELEASE_MAJOR=undefined
+fi
+
+OPENBATON_BOOTSTRAP_SUBCOMMAND_DEFAULT=release
+
+
+###############
+#### Usage ####
+###############
+
+usage () {
+    echo " * Usage: (The 'release' installation is the DEFAULT)"
+    echo "    ./bootstrap [help | clean | enable-persistence] | [[release | develop] [--openbaton-bootstrap-version=X.Y.Z (with X.Y.Z >= 3.2.0)] [--config-file=<absolute path to configuration file>]]                                         (if bootstrap already locally available)"
+    echo "    sh <(curl -s http://get.openbaton.org/bootstrap) [help | clean | enable-persistence] | [[release | develop] [--openbaton-bootstrap-version=X.Y.Z (with X.Y.Z >= 3.2.0)] [--config-file=<absolute path to configuration file>]]    (otherwise)"
+}
+
+
+##############################
+#### Execution privileges ####
+##############################
+
+check_binary () {
+  echo -n " * Checking for '${1}' ... "
+  if command -v ${1} >/dev/null 2>&1; then
+     echo "OK"
+     return 0
+  else
+     echo >&2 "FAILED"
+     return 1
+  fi
+}
+
+_ex='sh -c'
+if [ "${USER}" != "root" ]; then
+    if check_binary sudo; then
+        _ex='sudo -E sh -c'
+    elif check_binary su; then
+        _ex='su -c'
+    fi
+fi
+
+
+##############
+#### Main ####
+##############
+
+prereq () {
+    $_ex 'apt-get install -y wget'
+
+    wget -O bootstrap-common-functions "${OPENBATON_BOOTSTRAP_FUNCTIONS_BASE_URL}/${openbaton_bootstrap_version}/bootstrap-common-functions"
+    . ./bootstrap-common-functions
+}
+
+main_src () {
+    prereq
+
+    wget -O bootstrap-src-functions "${OPENBATON_BOOTSTRAP_FUNCTIONS_BASE_URL}/${openbaton_bootstrap_version}/bootstrap-src-functions"
+    . ./bootstrap-src-functions
+    src_bootstrap
+}
+
+main_deb () {
+    prereq
+
+    wget -O bootstrap-deb-functions "${OPENBATON_BOOTSTRAP_FUNCTIONS_BASE_URL}/${openbaton_bootstrap_version}/bootstrap-deb-functions"
+    . ./bootstrap-deb-functions
+    deb_bootstrap "${1}" "${2}"           # ${1} = release/nightly ; ${2} = distribution codename
+}
+
+main () {
+    # In case of "noninteractive" FRONTEND the latest RELEASE package will be installed
+    if [ "${DEBIAN_FRONTEND}" != "Noninteractive" -a "${DEBIAN_FRONTEND}" != "noninteractive" ]; then
+        echo " * Welcome to the Open Baton menu installation."
+        echo " * Available installation types are the following:"
+        echo "    1. develop (SOURCE): it will be downloaded the source code for all the components which will be executed in screens"
+        echo "    2. release (DEBIAN): it will be installed the binary version of the latest released version"
+        echo "    3. nightly (DEBIAN): it will be installed the binary version of the latest nightly build"
+        read -p " * Select the Open Baton installation type you prefer [2]: " install_type
+        case ${install_type} in
+            1 ) 
+                main_src 
+                ;;
+            3 ) 
+                main_deb nightly "${OS_DISTRIBUTION_CODENAME}"
+                ;;
+            * ) 
+                main_deb release "${OS_DISTRIBUTION_CODENAME}"
+                ;;
+        esac
+    else
+        # Non interactive debian release installation with the default values (when non interactive installation and no config file has been passed)
+        main_deb release "${OS_DISTRIBUTION_CODENAME}"
+    fi
+
+    log_success_msg "Open Baton installation complete"
+}
+
+
+#####################
+#### Entry Point ####
+#####################
+
+if [ -n "${1+1}" ]; then
+    if [ -f ${OPENBATON_BOOTSTRAP_ENV_FILE} ]; then
+        rm ${OPENBATON_BOOTSTRAP_ENV_FILE}
+    fi
+
+    for arg in $@ ; do
+        arg_id=$(echo $arg | cut -c1-2)
+        arg_key=${arg}
+        arg_value=
+
+        if [ ${arg_id} != "--" ]; then
+            case ${arg} in
+                "release" | "develop" | "clean" | "enable-persistence" )
+                    bootstrap_subcommand=${arg}
+                    ;;
+                * )
+                    # TODO: temporary fix
+                    #########################################################################################################################################
+                    arg_key=$( echo ${arg} | cut -c2-  | awk -F'=' '{ print $1}' )
+                    if [ "${arg_key}" = "configFile" ]; then
+                        log_failure_msg "The argument '-configFile' will be not supported anymore from the next version. Please use '--config-file' instead."
+                        arg_value=$( echo ${arg} | cut -c2- | awk -F'=' '{ print $2}' )
+                        if [ -f ${arg_value} ]; then
+                            echo " * Installing Open Baton using the following configuration file:"
+                            echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+                            cat ${arg_value}
+                            echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+                            export DEBIAN_FRONTEND=noninteractive
+                            set -a # Mark the variables set in the configuration file for export to the environment of subsequent commands
+                            . ${arg_value}
+                        else
+                            log_failure_msg "Configuration file '${arg_value}' does not exist."
+                        fi
+                        continue
+                    fi
+                    #########################################################################################################################################
+
+                    usage
+                    exit 1
+                    ;;
+            esac
+        else
+            arg_key=$( echo ${arg} | cut -c3-  | awk -F'=' '{ print $1}' )
+            arg_value=$( echo ${arg} | cut -c3- | awk -F'=' '{ print $2}' )
+
+            if [ "${arg_key}" = "config-file" ]; then
+                if [ -f ${arg_value} ]; then
+                    echo " * Installing Open Baton using the following configuration file:"
+                    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+                    cat ${arg_value}
+                    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+                    export DEBIAN_FRONTEND=noninteractive
+                    set -a # Mark the variables set in the configuration file for export to the environment of subsequent commands
+                    . ${arg_value}
+                else
+                    log_failure_msg "Configuration file '${arg_value}' does not exist."
+                fi
+            else
+                arg_key=$(echo ${arg_key} | tr '-' '_')
+                echo "${arg_key}=${arg_value}" >> ${OPENBATON_BOOTSTRAP_ENV_FILE}
+            fi
+        fi
+    done
+
+    if [ -f ${OPENBATON_BOOTSTRAP_ENV_FILE} ]; then
+        set -a # Mark the arguments passed by command line for export to the environment of subsequent commands
+        . ${OPENBATON_BOOTSTRAP_ENV_FILE}
+    fi
+
+    echo " * System Details:"
+    echo "     OS Architecture: ${OS_ARCHITECTURE}"
+    echo "     OS Type: ${OS_TYPE}"
+    echo "     OS Distribution ID: ${OS_DISTRIBUTION_ID}"
+    echo "     OS Distribution Codename: ${OS_DISTRIBUTION_CODENAME}"
+    echo "     OS Distribution Release: ${OS_DISTRIBUTION_RELEASE}"
+
+    bootstrap_subcommand=${bootstrap_subcommand:-$OPENBATON_BOOTSTRAP_SUBCOMMAND_DEFAULT}
+    case ${bootstrap_subcommand} in
+        "help")
+            usage
+            exit 1
+            ;;
+        "release" )
+            echo " * Installing the latest RELEASE package"
+            main_deb release "${OS_DISTRIBUTION_CODENAME}"
+            ;;
+        "develop" )
+            echo " * Installing the latest source code"
+            main_src
+            ;;
+        "clean" )
+            echo " * Cleaning the Open Baton installation"
+            prereq
+            clean
+            exit 0
+            ;;
+	"enable-persistence" )
+	    prereq
+	    install_mysql
+	    exit 0
+	    ;;
+        *)
+            usage
+            exit 1 
+            ;;
+    esac
+else # When invoked with 0 arguments: 'sh <(curl -s http://get.openbaton.org/bootstrap)'
+    echo " * System Details:"
+    echo "     OS Architecture: ${OS_ARCHITECTURE}"
+    echo "     OS Type: ${OS_TYPE}"
+    echo "     OS Distribution ID: ${OS_DISTRIBUTION_ID}"
+    echo "     OS Distribution Codename: ${OS_DISTRIBUTION_CODENAME}"
+    echo "     OS Distribution Release: ${OS_DISTRIBUTION_RELEASE}"
+
+    main
+fi
+
