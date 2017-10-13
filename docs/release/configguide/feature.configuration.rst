@@ -8,12 +8,6 @@ Orchestra is the OPNFV name given to the Open Baton integration project. This do
 Please notice that the JOID installer already integrates Orchestra as a scenario. Please refer to the JOID installer in case
 you want to install Orchestra using it.
 
-.. contents::
-   :depth: 3
-   :local:
-
-
-
 Hardware configuration
 ----------------------
 
