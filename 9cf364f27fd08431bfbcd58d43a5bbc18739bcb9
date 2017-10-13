@@ -1,0 +1,7 @@
+Verified+1: jenkins-ci <jenkins-opnfv-ci@opnfv.org>
+Code-Review+2: Giuseppe Carella <cargius@gmail.com>
+Submitted-by: Giuseppe Carella <cargius@gmail.com>
+Submitted-at: Fri, 13 Oct 2017 07:58:34 +0000
+Reviewed-on: https://gerrit.opnfv.org/gerrit/44975
+Project: orchestra
+Branch: refs/heads/master
