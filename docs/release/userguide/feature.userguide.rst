@@ -5,10 +5,6 @@
 Orchestra User Guide
 ====================
 
-.. contents::
-   :depth: 3
-   :local:
-
 Orchestra description
 ---------------------
 
