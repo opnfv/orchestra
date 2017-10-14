@@ -1,0 +1,8 @@
+Verified+1: jenkins-ci <jenkins-opnfv-ci@opnfv.org>
+Code-Review+1: Sofia Wallin <sofia.wallin@ericsson.com>
+Code-Review+2: Giuseppe Carella <cargius@gmail.com>
+Submitted-by: Giuseppe Carella <cargius@gmail.com>
+Submitted-at: Sat, 14 Oct 2017 06:39:37 +0000
+Reviewed-on: https://gerrit.opnfv.org/gerrit/44985
+Project: orchestra
+Branch: refs/heads/stable/euphrates
