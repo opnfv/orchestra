@@ -2,9 +2,9 @@
 .. SPDX-License-Identifier: CC-BY-4.0
 .. (c) Fraunhofer FOKUS
 
-============================================
-OPNFV Euphratest release notes for Orchestra
-============================================
+================================================
+OPNFV Euphratest 5.1 release notes for Orchestra
+================================================
 
 
 Abstract
@@ -12,17 +12,6 @@ Abstract
 
 This document describes the release note of the Orchestra project.
 
-
-Version history
-===============
-
-+------------+----------+--------------------+------------------------+
-| **Date**   | **Ver.** | **Author**         | **Comment**            |
-|            |          |                    |                        |
-+------------+----------+--------------------+------------------------+
-| 2017-08-25 | 1.0.0    | Giuseppe Carella   | Euphrates.1.0 release  |
-|            |          | (Fraunhofer FOKUS) |                        |
-+------------+----------+--------------------+------------------------+
 
 Important notes
 ===============
