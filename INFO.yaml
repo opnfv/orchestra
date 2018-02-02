@@ -1,0 +1,47 @@
+---
+project: 'Open Baton Integration (Orchestra)'
+project_creation_date: '16.08.2016'
+project_category: ''
+lifecycle_state: 'Proposal/Incubation/Mature/Integration/Top Level '
+project_lead: &opnfv_orchestra_ptl
+primary_contact: *opnfv_orchestra_ptl
+issue_tracking:
+    type: 'jira'
+    url: 'https://jira.opnfv.org/projects/[ORCHESTRA]'
+    key: '[ORCHESTRA]'
+mailing_list:
+    type: 'mailman2'
+    url: 'opnfv-tech-discuss@lists.opnfv.org'
+    tag: '[orchestra]'
+realtime_discussion:
+    type: irc
+    server: 'freenode.net'
+    channel: '#opnfv-orchestra'
+meetings:
+    - type: 'gotomeeting+irc'
+      agenda:  # eg: 'https://wiki.opnfv.org/display/'
+      url:  # eg: 'https://global.gotomeeting.com/join/819733085'
+      server: 'freenode.net'
+      channel: '#opnfv-meeting'
+      repeats: 'weekly'
+      time:  # eg: '16:00 UTC'
+repositories:
+    - 'orchestra'
+committers:
+    - <<: *opnfv_orchestra_ptl
+    - name: 'Giuseppe Carella'
+      email: 'cargius@gmail.com'
+      company: 'gmail.com'
+      id: 'giuseppe.carella'
+    - name: 'Lorenzo Tomasini'
+      email: 'lorenzo.tomasini@fokus.fraunhofer.de'
+      company: 'fokus.fraunhofer.de'
+      id: 'lorenzo.tomasini'
+    - name: 'Michael Pauls'
+      email: 'michael.pauls@fokus.fraunhofer.de'
+      company: 'fokus.fraunhofer.de'
+      id: 'mpauls'
+tsc:
+    # yamllint disable rule:line-length
+    approval: 'http//meetbot.opnfv.org/meetings/opnfv-meeting/2016/opnfv-meeting.2016-08-16-13.59.html'
+    # yamllint enable rule:line-length
