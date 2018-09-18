@@ -2,7 +2,6 @@
 *.pyc
 .*.sw?
 **.log
-/docs_build/
 /docs_output/
 /releng/
 /tests/*.img
@@ -38,10 +37,10 @@ coverage.xml
 
 
 # Sphinx documentation
-docs/_build/
 
 # IDE
 .idea/
 
 # Build results
 .tox
+docs/_build/*
